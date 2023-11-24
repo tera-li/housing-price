@@ -58,8 +58,9 @@ class ErShouSpider(BaseSpider):
         # 中文版块
         chinese_area = chinese_area_dict.get(area_name, "")
 
+        rules = 'dp1sf1y1ba75ea130l3l4l5bp120ep165'
         ershou_list = list()
-        page = 'http://{0}.{1}.com/ershoufang/{2}/'.format(city_name, SPIDER_NAME, area_name)
+        page = 'http://{0}.{1}.com/ershoufang/{2}/{3}'.format(city_name, SPIDER_NAME, area_name, rules)
         print(page)  # 打印版块页面地址
         headers = create_headers()
         response = requests.get(page, timeout=10, headers=headers)
@@ -74,10 +75,10 @@ class ErShouSpider(BaseSpider):
         except Exception as e:
             print("\tWarning: only find one page for {0}".format(area_name))
             print(e)
-
+        print("\t{0}板块有{1}页面".format(area_name, total_page))
         # 从第一页开始,一直遍历到最后一页
         for num in range(1, total_page + 1):
-            page = 'http://{0}.{1}.com/ershoufang/{2}/pg{3}'.format(city_name, SPIDER_NAME, area_name, num)
+            page = 'http://{0}.{1}.com/ershoufang/{2}/pg{3}{4}/'.format(city_name, SPIDER_NAME, area_name, num, rules)
             print(page)  # 打印每一页的地址
             headers = create_headers()
             BaseSpider.random_delay()
@@ -88,21 +89,31 @@ class ErShouSpider(BaseSpider):
             # 获得有小区信息的panel
             house_elements = soup.find_all('li', class_="clear")
             for house_elem in house_elements:
-                price = house_elem.find('div', class_="totalPrice")
+                # 价格
+                price = house_elem.find('div', class_="totalPrice").find('span')
+                # 单价
+                unitPrice = house_elem.find('div', class_="unitPrice").find('span')
+                # 名称
                 name = house_elem.find('div', class_='title')
+                # 面积、大小、楼层、朝向
                 desc = house_elem.find('div', class_="houseInfo")
-                pic = house_elem.find('a', class_="img").find('img', class_="lj-lazy")
+                # 房子链接
+                pic = house_elem.find('a', class_="maidian-detail")
+                # 发布时间
+                time = house_elem.find('div', class_="followInfo")
 
                 # 继续清理数据
-                price = price.text.strip()
+                price = price.text.strip() + "万"
+                unitPrice = unitPrice.text.replace(",", "").strip()
                 name = name.text.replace("\n", "")
-                desc = desc.text.replace("\n", "").strip()
-                pic = pic.get('data-original').strip()
+                desc = desc.text.replace("\n", "").replace("\t", "").strip()
+                pic = pic.get('href').strip()
+                time = time.text.replace("\n", "").strip()
                 # print(pic)
 
 
                 # 作为对象保存
-                ershou = ErShou(chinese_district, chinese_area, name, price, desc, pic)
+                ershou = ErShou(chinese_district, chinese_area, name, price, unitPrice, desc, pic, time)
                 ershou_list.append(ershou)
         return ershou_list
 

@@ -3,6 +3,7 @@
 # author: Zeng YueTian
 # 此代码仅供学习与交流，请勿用于商业用途。
 # 获得指定城市的二手房数据
+# python ershou.py cd
 
 from lib.spider.ershou_spider import *
 
